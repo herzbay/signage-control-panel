@@ -1,6 +1,7 @@
 import express = require("express");
 import zod = require("zod");
 import supabaseConfig = require("../config/supabase");
+import storageService = require("../services/storage.service");
 
 const { z } = zod;
 const supabase = supabaseConfig.supabaseAdmin;
@@ -194,6 +195,99 @@ const updateContent: express.RequestHandler = async (req, res) => {
     message: "Content updated successfully",
     data,
   });
+};
+
+ // POST /api/contents/upload
+const uploadContent: express.RequestHandler = async (req, res) => {
+  const file = (req as express.Request & {
+    file?: Express.Multer.File;
+  }).file;
+
+  if (!file) {
+    res.status(400).json({
+      success: false,
+      message: "No file uploaded",
+    });
+    return;
+  }
+
+  const titleSchema = z.object({
+    judul: z.string().trim().min(1).max(200),
+  });
+
+  const validation = titleSchema.safeParse(req.body);
+
+  if (!validation.success) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid content title",
+      errors: validation.error.issues,
+    });
+    return;
+  }
+
+  const tipe = file.mimetype.startsWith("image/")
+    ? "image"
+    : "video";
+
+  let storagePath: string | null = null;
+
+  try {
+    // Upload file to Supabase Storage
+    const uploadedFile = await storageService.uploadFile(file);
+    storagePath = uploadedFile.storagePath;
+
+    // Save metadata to database
+    const { data, error } = await supabase
+      .from("contents")
+      .insert({
+        judul: validation.data.judul,
+        tipe,
+        storage_path: storagePath,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Create content metadata error:", error.message);
+
+      // Remove uploaded file if database insertion fails
+      await storageService.deleteFile(storagePath);
+      storagePath = null;
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to save content metadata",
+      });
+      return;
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Content uploaded successfully",
+      data: {
+        ...data,
+        file_size: uploadedFile.size,
+        mime_type: uploadedFile.mimeType,
+      },
+    });
+  } catch (error) {
+    console.error("Upload content error:", error);
+
+    // Attempt cleanup if upload succeeded but a later step failed
+    if (storagePath) {
+      try {
+        await storageService.deleteFile(storagePath);
+      } catch (cleanupError) {
+        console.error("Storage cleanup error:", cleanupError);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload content",
+    });
+  }
 };
 
 // DELETE /api/contents/:id
