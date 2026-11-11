@@ -6,6 +6,7 @@ import express = require("express");
 import cors = require("cors");
 import supabaseConfig = require("./config/supabase");
 import deviceRoutes = require("./routes/device.routes");
+import contentRoutes = require("./routes/content.routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,8 +15,9 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Device routes
+// API routes
 app.use("/api/devices", deviceRoutes);
+app.use("/api/contents", contentRoutes);
 
 // API health check
 app.get("/api/health", (_req, res) => {
