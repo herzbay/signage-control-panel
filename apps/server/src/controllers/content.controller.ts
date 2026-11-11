@@ -290,6 +290,74 @@ const uploadContent: express.RequestHandler = async (req, res) => {
   }
 };
 
+ // GET /api/contents/:id/url
+const getContentUrl: express.RequestHandler = async (req, res) => {
+  const idResult = z.string().uuid().safeParse(req.params.id);
+
+  if (!idResult.success) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid content ID",
+    });
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("contents")
+    .select("id, judul, tipe, storage_path")
+    .eq("id", idResult.data)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Get content URL error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve content",
+    });
+    return;
+  }
+
+  if (!data) {
+    res.status(404).json({
+      success: false,
+      message: "Content not found",
+    });
+    return;
+  }
+
+  if (!data.storage_path) {
+    res.status(400).json({
+      success: false,
+      message: "Content does not have a storage file",
+    });
+    return;
+  }
+
+  try {
+    const signedUrl = await storageService.createSignedUrl(
+      data.storage_path
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        id: data.id,
+        judul: data.judul,
+        tipe: data.tipe,
+        url: signedUrl,
+        expires_in: 3600,
+      },
+    });
+  } catch (error) {
+    console.error("Generate signed URL error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate content URL",
+    });
+  }
+};
+
 // DELETE /api/contents/:id
 const deleteContent: express.RequestHandler = async (req, res) => {
   const idResult = z.string().uuid().safeParse(req.params.id);
@@ -338,4 +406,6 @@ export = {
   createContent,
   updateContent,
   deleteContent,
+  uploadContent,
+  getContentUrl,
 };
