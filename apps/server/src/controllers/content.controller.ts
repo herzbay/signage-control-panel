@@ -370,34 +370,74 @@ const deleteContent: express.RequestHandler = async (req, res) => {
     return;
   }
 
-  const { data, error } = await supabase
-    .from("contents")
-    .delete()
-    .eq("id", idResult.data)
-    .select("id")
-    .maybeSingle();
+  try {
+    // Retrieve content before deletion
+    const { data: content, error: findError } = await supabase
+      .from("contents")
+      .select("id, storage_path")
+      .eq("id", idResult.data)
+      .maybeSingle();
 
-  if (error) {
-    console.error("Delete content error:", error.message);
+    if (findError) {
+      console.error("Find content error:", findError.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve content",
+      });
+      return;
+    }
+
+    if (!content) {
+      res.status(404).json({
+        success: false,
+        message: "Content not found",
+      });
+      return;
+    }
+
+    // Delete content metadata from database
+    const { error: deleteError } = await supabase
+      .from("contents")
+      .delete()
+      .eq("id", idResult.data);
+
+    if (deleteError) {
+      console.error("Delete content error:", deleteError.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to delete content",
+      });
+      return;
+    }
+
+    // Delete associated file from Supabase Storage
+    if (content.storage_path) {
+      try {
+        await storageService.deleteFile(content.storage_path);
+      } catch (storageError) {
+        console.error("Storage cleanup error:", storageError);
+
+        res.status(200).json({
+          success: true,
+          message: "Content deleted, but storage file cleanup failed",
+          warning: "The associated storage file may need manual cleanup",
+        });
+        return;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Content deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete content error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to delete content",
     });
-    return;
   }
-
-  if (!data) {
-    res.status(404).json({
-      success: false,
-      message: "Content not found",
-    });
-    return;
-  }
-
-  res.status(200).json({
-    success: true,
-    message: "Content deleted successfully",
-  });
 };
 
 export = {
