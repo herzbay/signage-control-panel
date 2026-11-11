@@ -5,6 +5,7 @@ dotenv.config();
 import express = require("express");
 import cors = require("cors");
 import supabaseConfig = require("./config/supabase");
+import deviceRoutes = require("./routes/device.routes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,6 +13,9 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Device routes
+app.use("/api/devices", deviceRoutes);
 
 // API health check
 app.get("/api/health", (_req, res) => {
