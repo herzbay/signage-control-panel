@@ -9,5 +9,5 @@ events:
     description: ""
     subscribeOnConnect: false
 settings: {}
-messages: .resources/Socket.resources/messages
+messages: .resources/Device Socket.resources/messages
 order: 4000

@@ -1,0 +1,9 @@
+$kind: socket.io-request
+description: ""
+url: http://localhost:5000
+events:
+  - name: device:status
+    description: ""
+    subscribeOnConnect: true
+settings: {}
+order: 5000
