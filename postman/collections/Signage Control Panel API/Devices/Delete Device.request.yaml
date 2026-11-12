@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/devices/9f00fbbe-40b1-4ce5-b804-cfe3ed5ee4f5"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0qtf}}"
+order: 5000

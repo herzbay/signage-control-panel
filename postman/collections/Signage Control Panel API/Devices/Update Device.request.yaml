@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/api/devices/url_id"
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"nama\": \"Smart TV Lobby Updated\",\r
+
+    \  \"lokasi\": \"Lantai 2 - Lobby\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0qtf}}"
+order: 4000

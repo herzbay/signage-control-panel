@@ -1,5 +1,14 @@
 $kind: collection
 variables:
-  base_url: ""
-  admin_email: ""
-  admin_password: ""
+  - key: base_url
+    value: ""
+    disabled: false
+  - key: admin_email
+    value: ""
+    disabled: false
+  - key: admin_password
+    value: ""
+    disabled: false
+  - key: json_web_token_0qtf
+    secret: true
+    disabled: false
