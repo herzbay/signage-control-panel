@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getDeviceDisplay } from "@/lib/device-api";
 import type {
@@ -8,7 +8,7 @@ import type {
   DisplayContent,
 } from "@/lib/device-api";
 
-export default function DeviceClientPage() {
+function DeviceClientContent() {
   const params = useParams<{ id: string }>();
   const deviceId = params.id;
 
@@ -57,19 +57,19 @@ export default function DeviceClientPage() {
   const currentContent: DisplayContent | undefined =
     contents[currentIndex];
 
-  useEffect(() => {
-    if (contents.length <= 1) {
-      return;
+    useEffect(() => {
+    if (contents.length <= 1 || currentContent?.tipe === "video") {
+        return;
     }
 
     const interval = setInterval(() => {
-      setCurrentIndex((previousIndex) =>
+        setCurrentIndex((previousIndex) =>
         (previousIndex + 1) % contents.length
-      );
+        );
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [contents.length]);
+    }, [contents.length, currentContent?.tipe]);
 
   if (loading) {
     return (
@@ -133,18 +133,23 @@ export default function DeviceClientPage() {
 
       case "video":
         return content.url ? (
-          <video
+            <video
             key={content.id}
             src={content.url}
             autoPlay
             muted
-            loop
+            loop={contents.length === 1}
             playsInline
+            onEnded={() => {
+                setCurrentIndex(
+                (previousIndex) => (previousIndex + 1) % contents.length
+                );
+            }}
             className="h-full w-full object-contain"
-          />
+            />
         ) : (
-          <p className="text-white">Video tidak tersedia.</p>
-        );
+            <p className="text-white">Video tidak tersedia.</p>
+      );
 
       case "text":
         return (
@@ -188,5 +193,19 @@ export default function DeviceClientPage() {
         <span>Signage Control Panel</span>
       </footer>
     </main>
+  );
+}
+
+export default function DeviceClientPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-black text-white">
+          <p className="text-lg">Memuat tampilan perangkat...</p>
+        </main>
+      }
+    >
+      <DeviceClientContent />
+    </Suspense>
   );
 }
