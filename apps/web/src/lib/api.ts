@@ -42,11 +42,35 @@ export type Content = {
   updated_at?: string;
 };
 
-type ApiListResponse<T> = {
+type ApiResponse<T> = {
   success: boolean;
   message: string;
-  data: T[];
+  data: T;
 };
+
+async function apiRequest<T>(
+  endpoint: string,
+  token: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+    cache: "no-store",
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "API request failed");
+  }
+
+  return result as T;
+}
 
 export async function loginAdmin(
   email: string,
@@ -69,32 +93,8 @@ export async function loginAdmin(
   return result as LoginResponse;
 }
 
-async function authenticatedFetch<T>(
-  endpoint: string,
-  token: string
-): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
-
-  const result = await response.json();
-
-  if (!response.ok || !result.success) {
-    throw new Error(result.message || "Failed to fetch data");
-  }
-
-  return result as T;
-}
-
-export async function getDevices(
-  token: string
-): Promise<Device[]> {
-  const result = await authenticatedFetch<ApiListResponse<Device>>(
+export async function getDevices(token: string): Promise<Device[]> {
+  const result = await apiRequest<ApiResponse<Device[]>>(
     "/api/devices",
     token
   );
@@ -102,10 +102,54 @@ export async function getDevices(
   return result.data;
 }
 
-export async function getContents(
-  token: string
-): Promise<Content[]> {
-  const result = await authenticatedFetch<ApiListResponse<Content>>(
+export async function createDevice(
+  token: string,
+  data: { nama: string; lokasi: string }
+): Promise<Device> {
+  const result = await apiRequest<ApiResponse<Device>>(
+    "/api/devices",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  return result.data;
+}
+
+export async function updateDevice(
+  token: string,
+  id: string,
+  data: { nama: string; lokasi: string }
+): Promise<Device> {
+  const result = await apiRequest<ApiResponse<Device>>(
+    `/api/devices/${id}`,
+    token,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  return result.data;
+}
+
+export async function deleteDevice(
+  token: string,
+  id: string
+): Promise<void> {
+  await apiRequest<ApiResponse<unknown>>(
+    `/api/devices/${id}`,
+    token,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
+export async function getContents(token: string): Promise<Content[]> {
+  const result = await apiRequest<ApiResponse<Content[]>>(
     "/api/contents",
     token
   );
