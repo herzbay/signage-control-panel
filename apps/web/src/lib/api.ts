@@ -4,6 +4,7 @@ if (!API_URL) {
   throw new Error("NEXT_PUBLIC_API_URL is not configured");
 }
 
+// Types
 export type Admin = {
   id: string;
   email: string;
@@ -42,17 +43,26 @@ export type Content = {
   updated_at?: string;
 };
 
+export type ContentUrl = {
+  id: string;
+  judul: string;
+  tipe: "image" | "video" | "text";
+  url: string;
+  expires_in: number;
+};
+
 type ApiResponse<T> = {
   success: boolean;
   message: string;
   data: T;
 };
 
+// Generic API request
 async function apiRequest<T>(
   endpoint: string,
   token: string,
   options: RequestInit = {}
-): Promise<T> {
+): Promise<ApiResponse<T>> {
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
@@ -69,9 +79,10 @@ async function apiRequest<T>(
     throw new Error(result.message || "API request failed");
   }
 
-  return result as T;
+  return result as ApiResponse<T>;
 }
 
+// Authentication
 export async function loginAdmin(
   email: string,
   password: string
@@ -93,12 +104,9 @@ export async function loginAdmin(
   return result as LoginResponse;
 }
 
+// Devices
 export async function getDevices(token: string): Promise<Device[]> {
-  const result = await apiRequest<ApiResponse<Device[]>>(
-    "/api/devices",
-    token
-  );
-
+  const result = await apiRequest<Device[]>("/api/devices", token);
   return result.data;
 }
 
@@ -106,14 +114,10 @@ export async function createDevice(
   token: string,
   data: { nama: string; lokasi: string }
 ): Promise<Device> {
-  const result = await apiRequest<ApiResponse<Device>>(
-    "/api/devices",
-    token,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
+  const result = await apiRequest<Device>("/api/devices", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
   return result.data;
 }
@@ -123,14 +127,10 @@ export async function updateDevice(
   id: string,
   data: { nama: string; lokasi: string }
 ): Promise<Device> {
-  const result = await apiRequest<ApiResponse<Device>>(
-    `/api/devices/${id}`,
-    token,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }
-  );
+  const result = await apiRequest<Device>(`/api/devices/${id}`, token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 
   return result.data;
 }
@@ -139,18 +139,96 @@ export async function deleteDevice(
   token: string,
   id: string
 ): Promise<void> {
-  await apiRequest<ApiResponse<unknown>>(
-    `/api/devices/${id}`,
-    token,
-    {
-      method: "DELETE",
-    }
-  );
+  await apiRequest<unknown>(`/api/devices/${id}`, token, {
+    method: "DELETE",
+  });
 }
 
+// Contents
 export async function getContents(token: string): Promise<Content[]> {
-  const result = await apiRequest<ApiResponse<Content[]>>(
-    "/api/contents",
+  const result = await apiRequest<Content[]>("/api/contents", token);
+  return result.data;
+}
+
+export async function createTextContent(
+  token: string,
+  data: {
+    judul: string;
+    tipe: "text";
+    payload: Record<string, unknown>;
+  }
+): Promise<Content> {
+  const result = await apiRequest<Content>("/api/contents", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  return result.data;
+}
+
+export async function updateContent(
+  token: string,
+  id: string,
+  data: {
+    judul?: string;
+    tipe?: "image" | "video" | "text";
+    url?: string | null;
+    storage_path?: string | null;
+    payload?: Record<string, unknown> | null;
+  }
+): Promise<Content> {
+  const result = await apiRequest<Content>(`/api/contents/${id}`, token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+  return result.data;
+}
+
+export async function deleteContent(
+  token: string,
+  id: string
+): Promise<void> {
+  await apiRequest<unknown>(`/api/contents/${id}`, token, {
+    method: "DELETE",
+  });
+}
+
+// Upload image/video
+export async function uploadContent(
+  token: string,
+  judul: string,
+  file: File
+): Promise<Content> {
+  const formData = new FormData();
+
+  formData.append("judul", judul);
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/api/contents/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Content upload failed");
+  }
+
+  return result.data as Content;
+}
+
+// Get signed URL for private media
+export async function getContentUrl(
+  token: string,
+  id: string
+): Promise<ContentUrl> {
+  const result = await apiRequest<ContentUrl>(
+    `/api/contents/${id}/url`,
     token
   );
 
