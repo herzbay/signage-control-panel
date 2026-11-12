@@ -127,10 +127,13 @@ export default function DashboardPage() {
 
   if (checkingAuth) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <p className="text-sm text-zinc-500">
-          Memeriksa sesi masuk...
-        </p>
+      <main className="flex min-h-screen items-center justify-center bg-black">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-[#17CBB7]" />
+          <p className="text-sm font-medium text-white">
+            Memeriksa sesi masuk...
+          </p>
+        </div>
       </main>
     );
   }
@@ -152,19 +155,20 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-100">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+    <div className="min-h-screen bg-[#527279]">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 border-b border-[#405D63] bg-[#527279] shadow-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-lg font-bold text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#527279] text-lg font-bold text-white ring-2 ring-white/70">
               S
             </div>
 
             <div>
-              <h1 className="font-bold text-zinc-900">
+              <h1 className="font-bold text-white">
                 Signage Control Panel
               </h1>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-white/75">
                 Panel Pengelolaan Signage
               </p>
             </div>
@@ -172,17 +176,17 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-zinc-900">
+              <p className="text-sm font-semibold text-white">
                 {admin?.full_name}
               </p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-white/75">
                 {admin?.email}
               </p>
             </div>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 transition hover:bg-zinc-100"
+              className="flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20"
             >
               <LogOut size={16} />
               Keluar
@@ -191,22 +195,24 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl space-y-8 px-6 py-8">
+      {/* Konten Dashboard */}
+      <main className="mx-auto max-w-7xl space-y-7 px-4 py-7 sm:px-6 sm:py-8">
+        {/* Ringkasan */}
         <section className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-zinc-500">Ringkasan</p>
-            <h2 className="mt-1 text-2xl font-bold text-zinc-900">
-              Selamat datang, {admin?.full_name}!
+            <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">
+            Selamat datang, {admin?.full_name}!
             </h2>
-            <p className="mt-2 text-sm text-zinc-500">
-              Pantau perangkat signage dan kelola konten yang ditampilkan.
+
+            <p className="mt-2 text-sm text-white/75">
+            Pantau perangkat signage dan kelola konten yang ditampilkan.
             </p>
           </div>
 
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-[#17CBB7] px-4 py-2.5 text-sm font-semibold text-[#24383C] shadow-sm transition hover:bg-[#0DA995] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw
               size={16}
@@ -216,42 +222,45 @@ export default function DashboardPage() {
           </button>
         </section>
 
+        {/* Pesan Kesalahan */}
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div className="rounded-xl border border-red-500/40 bg-red-950 px-4 py-3 text-sm text-red-200">
             {error}
           </div>
         )}
 
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Statistik */}
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Perangkat"
             value={loading ? "..." : devices.length}
             description="Perangkat terdaftar"
-            icon={<Monitor size={20} />}
+            icon={<Monitor size={21} />}
           />
 
           <StatCard
             title="Perangkat Daring"
             value={loading ? "..." : onlineCount}
             description="Sedang terhubung"
-            icon={<Wifi size={20} />}
+            icon={<Wifi size={21} />}
           />
 
           <StatCard
             title="Perangkat Luring"
             value={loading ? "..." : offlineCount}
             description="Tidak terhubung"
-            icon={<WifiOff size={20} />}
+            icon={<WifiOff size={21} />}
           />
 
           <StatCard
             title="Total Konten"
             value={loading ? "..." : contents.length}
             description="Konten tersimpan"
-            icon={<Images size={20} />}
+            icon={<Images size={21} />}
           />
         </section>
 
+        {/* Pengelolaan Perangkat */}
         <DeviceManagement
           devices={devices}
           setDevices={setDevices}
@@ -260,6 +269,7 @@ export default function DashboardPage() {
           onRefresh={handleRefresh}
         />
 
+        {/* Pengelolaan Konten */}
         <ContentManagement
           contents={contents}
           setContents={setContents}
@@ -285,17 +295,22 @@ function StatCard({
   icon,
 }: StatCardProps) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-zinc-500">{title}</p>
-        <span className="text-zinc-400">{icon}</span>
+    <div className="rounded-xl border border-[#17CBB7] bg-[#17CBB7] p-5 shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-[#24383C]">
+          {title}
+        </p>
+
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#527279] text-white">
+          {icon}
+        </span>
       </div>
 
-      <p className="mt-4 text-3xl font-bold text-zinc-900">
+      <p className="mt-4 text-3xl font-bold tracking-tight text-[#24383C]">
         {value}
       </p>
 
-      <p className="mt-1 text-xs text-zinc-400">
+      <p className="mt-1 text-xs font-medium text-[#405D63]">
         {description}
       </p>
     </div>
