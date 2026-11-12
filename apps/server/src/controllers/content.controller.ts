@@ -6,6 +6,43 @@ import storageService = require("../services/storage.service");
 const { z } = zod;
 const supabase = supabaseConfig.supabaseAdmin;
 
+// Mengambil daftar perangkat yang menggunakan suatu konten.
+const getAssignedDeviceIds = async (
+  contentId: string
+): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from("device_contents")
+    .select("device_id")
+    .eq("content_id", contentId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return [
+    ...new Set((data ?? []).map((item) => item.device_id)),
+  ];
+};
+
+// Mengirim pemberitahuan perubahan playlist ke perangkat terkait.
+const notifyDevices = (
+  req: express.Request,
+  deviceIds: string[]
+) => {
+  const io = req.app.get("io");
+
+  if (!io) {
+    console.warn("Socket.IO instance is not available");
+    return;
+  }
+
+  for (const deviceId of deviceIds) {
+    io.to(`device:${deviceId}`).emit("device:playlist:updated", {
+      deviceId,
+    });
+  }
+};
+
 // Validation schemas
 const createContentSchema = z.object({
   judul: z.string().trim().min(1).max(200),
@@ -190,6 +227,14 @@ const updateContent: express.RequestHandler = async (req, res) => {
     return;
   }
 
+  // Beri tahu perangkat yang menggunakan konten ini.
+  try {
+    const deviceIds = await getAssignedDeviceIds(idResult.data);
+    notifyDevices(req, deviceIds);
+  } catch (error) {
+    console.error("Notify updated content error:", error);
+  }
+
   res.status(200).json({
     success: true,
     message: "Content updated successfully",
@@ -371,7 +416,7 @@ const deleteContent: express.RequestHandler = async (req, res) => {
   }
 
   try {
-    // Retrieve content before deletion
+    // Ambil data konten sebelum dihapus.
     const { data: content, error: findError } = await supabase
       .from("contents")
       .select("id, storage_path")
@@ -395,7 +440,29 @@ const deleteContent: express.RequestHandler = async (req, res) => {
       return;
     }
 
-    // Delete content metadata from database
+    // Ambil perangkat yang menggunakan konten ini.
+    const deviceIds = await getAssignedDeviceIds(idResult.data);
+
+    // Hapus hubungan konten dengan perangkat.
+    const { error: assignmentError } = await supabase
+      .from("device_contents")
+      .delete()
+      .eq("content_id", idResult.data);
+
+    if (assignmentError) {
+      console.error(
+        "Delete content assignments error:",
+        assignmentError.message
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to remove content assignments",
+      });
+      return;
+    }
+
+    // Hapus metadata konten dari database.
     const { error: deleteError } = await supabase
       .from("contents")
       .delete()
@@ -403,6 +470,7 @@ const deleteContent: express.RequestHandler = async (req, res) => {
 
     if (deleteError) {
       console.error("Delete content error:", deleteError.message);
+
       res.status(500).json({
         success: false,
         message: "Failed to delete content",
@@ -410,7 +478,10 @@ const deleteContent: express.RequestHandler = async (req, res) => {
       return;
     }
 
-    // Delete associated file from Supabase Storage
+    // Beri tahu perangkat agar memperbarui playlist.
+    notifyDevices(req, deviceIds);
+
+    // Hapus file terkait dari Supabase Storage.
     if (content.storage_path) {
       try {
         await storageService.deleteFile(content.storage_path);
