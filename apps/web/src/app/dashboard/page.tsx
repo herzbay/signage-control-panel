@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   Images,
@@ -9,8 +9,6 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
-  LayoutDashboard,
-  UserRound,
 } from "lucide-react";
 
 import {
@@ -42,35 +40,40 @@ export default function DashboardPage() {
     router.replace("/login");
   };
 
-  const loadDashboardData = useCallback(async (token: string) => {
-    setLoading(true);
-    setError("");
+  const loadDashboardData = useCallback(
+    async (token: string) => {
+      setLoading(true);
+      setError("");
 
-    try {
-      const [deviceData, contentData] = await Promise.all([
-        getDevices(token),
-        getContents(token),
-      ]);
+      try {
+        const [deviceData, contentData] = await Promise.all([
+          getDevices(token),
+          getContents(token),
+        ]);
 
-      setDevices(deviceData);
-      setContents(contentData);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load dashboard data";
+        setDevices(deviceData);
+        setContents(contentData);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "";
 
-      if (message.toLowerCase().includes("token") ||
-          message.toLowerCase().includes("unauthorized")) {
-        sessionStorage.removeItem("admin_token");
-        sessionStorage.removeItem("admin_data");
-        router.replace("/login");
-        return;
+        if (
+          message.toLowerCase().includes("token") ||
+          message.toLowerCase().includes("unauthorized")
+        ) {
+          sessionStorage.removeItem("admin_token");
+          sessionStorage.removeItem("admin_data");
+          router.replace("/login");
+          return;
+        }
+
+        setError("Gagal memuat data dashboard. Silakan coba kembali.");
+      } finally {
+        setLoading(false);
       }
-
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
@@ -126,7 +129,7 @@ export default function DashboardPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100">
         <p className="text-sm text-zinc-500">
-          Checking authentication...
+          Memeriksa sesi masuk...
         </p>
       </main>
     );
@@ -139,6 +142,14 @@ export default function DashboardPage() {
   const offlineCount = devices.filter(
     (device) => device.status === "offline"
   ).length;
+
+  const handleRefresh = () => {
+    const token = sessionStorage.getItem("admin_token");
+
+    if (token) {
+      void loadDashboardData(token);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-100">
@@ -154,12 +165,12 @@ export default function DashboardPage() {
                 Signage Control Panel
               </h1>
               <p className="text-xs text-zinc-500">
-                Administration Dashboard
+                Panel Pengelolaan Signage
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-zinc-900">
                 {admin?.full_name}
@@ -174,7 +185,7 @@ export default function DashboardPage() {
               className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 transition hover:bg-zinc-100"
             >
               <LogOut size={16} />
-              Logout
+              Keluar
             </button>
           </div>
         </div>
@@ -183,20 +194,17 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-7xl space-y-8 px-6 py-8">
         <section className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-zinc-500">Overview</p>
+            <p className="text-sm text-zinc-500">Ringkasan</p>
             <h2 className="mt-1 text-2xl font-bold text-zinc-900">
-              Welcome back, {admin?.full_name}!
+              Selamat datang, {admin?.full_name}!
             </h2>
             <p className="mt-2 text-sm text-zinc-500">
-              Monitor your signage devices and manage display content.
+              Pantau perangkat signage dan kelola konten yang ditampilkan.
             </p>
           </div>
 
           <button
-            onClick={() => {
-              const token = sessionStorage.getItem("admin_token");
-              if (token) void loadDashboardData(token);
-            }}
+            onClick={handleRefresh}
             disabled={loading}
             className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
           >
@@ -204,7 +212,7 @@ export default function DashboardPage() {
               size={16}
               className={loading ? "animate-spin" : ""}
             />
-            Refresh
+            Muat Ulang
           </button>
         </section>
 
@@ -216,30 +224,30 @@ export default function DashboardPage() {
 
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Total Devices"
+            title="Total Perangkat"
             value={loading ? "..." : devices.length}
-            description="Registered devices"
+            description="Perangkat terdaftar"
             icon={<Monitor size={20} />}
           />
 
           <StatCard
-            title="Online Devices"
+            title="Perangkat Daring"
             value={loading ? "..." : onlineCount}
-            description="Currently connected"
+            description="Sedang terhubung"
             icon={<Wifi size={20} />}
           />
 
           <StatCard
-            title="Offline Devices"
+            title="Perangkat Luring"
             value={loading ? "..." : offlineCount}
-            description="Currently disconnected"
+            description="Tidak terhubung"
             icon={<WifiOff size={20} />}
           />
 
           <StatCard
-            title="Total Contents"
+            title="Total Konten"
             value={loading ? "..." : contents.length}
-            description="Uploaded contents"
+            description="Konten tersimpan"
             icon={<Images size={20} />}
           />
         </section>
@@ -249,52 +257,15 @@ export default function DashboardPage() {
           setDevices={setDevices}
           contents={contents}
           loading={loading}
-          onRefresh={() => {
-              const token = sessionStorage.getItem("admin_token");
-
-              if (token) {
-              void loadDashboardData(token);
-              }
-          }}
+          onRefresh={handleRefresh}
         />
 
         <ContentManagement
           contents={contents}
           setContents={setContents}
           loading={loading}
-          onRefresh={() => {
-              const token = sessionStorage.getItem("admin_token");
-
-              if (token) {
-              void loadDashboardData(token);
-              }
-          }}
-        />        
-
-        <section className="rounded-xl border border-zinc-200 bg-white p-6">
-          <div className="flex items-center gap-2">
-            <UserRound size={19} className="text-zinc-500" />
-            <h3 className="font-semibold text-zinc-900">
-              Admin Information
-            </h3>
-          </div>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-xs text-zinc-400">Full Name</p>
-              <p className="mt-1 text-sm font-medium text-zinc-800">
-                {admin?.full_name}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs text-zinc-400">Email</p>
-              <p className="mt-1 text-sm font-medium text-zinc-800">
-                {admin?.email}
-              </p>
-            </div>
-          </div>
-        </section>
+          onRefresh={handleRefresh}
+        />
       </main>
     </div>
   );
@@ -304,7 +275,7 @@ type StatCardProps = {
   title: string;
   value: string | number;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 };
 
 function StatCard({
