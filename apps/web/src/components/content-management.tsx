@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import {
+  useEffect,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   Plus,
   Pencil,
@@ -50,7 +55,7 @@ export default function ContentManagement({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  // Generate signed URLs for private media files
+  // Mengambil URL sementara untuk pratinjau media.
   useEffect(() => {
     let active = true;
 
@@ -135,13 +140,17 @@ export default function ContentManagement({
     resetForm();
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: Parameters<
+        NonNullable<React.ComponentProps<"form">["onSubmit"]>
+    >[0]
+    ) {
     event.preventDefault();
 
     const token = sessionStorage.getItem("admin_token");
 
     if (!token) {
-      setError("Sesi login tidak ditemukan. Silakan login kembali.");
+      setError("Sesi masuk tidak ditemukan. Silakan masuk kembali.");
       return;
     }
 
@@ -151,7 +160,7 @@ export default function ContentManagement({
     }
 
     if (!editingContent && tipe !== "text" && !selectedFile) {
-      setError("Silakan pilih file yang akan di-upload.");
+      setError("Silakan pilih berkas yang akan diunggah.");
       return;
     }
 
@@ -207,12 +216,8 @@ export default function ContentManagement({
 
       setModalOpen(false);
       resetForm();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Terjadi kesalahan saat menyimpan konten."
-      );
+    } catch {
+      setError("Gagal menyimpan konten. Silakan periksa kembali data dan koneksi Anda.");
     } finally {
       setSaving(false);
     }
@@ -228,7 +233,7 @@ export default function ContentManagement({
     const token = sessionStorage.getItem("admin_token");
 
     if (!token) {
-      setError("Sesi login tidak ditemukan. Silakan login kembali.");
+      setError("Sesi masuk tidak ditemukan. Silakan masuk kembali.");
       return;
     }
 
@@ -247,12 +252,8 @@ export default function ContentManagement({
         delete updated[content.id];
         return updated;
       });
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Gagal menghapus konten."
-      );
+    } catch {
+      setError("Gagal menghapus konten. Silakan coba kembali.");
     } finally {
       setDeletingId(null);
     }
@@ -262,6 +263,12 @@ export default function ContentManagement({
     if (contentType === "image") return <ImageIcon size={18} />;
     if (contentType === "video") return <Video size={18} />;
     return <FileText size={18} />;
+  }
+
+  function getContentTypeLabel(contentType: ContentType) {
+    if (contentType === "image") return "Gambar";
+    if (contentType === "video") return "Video";
+    return "Teks";
   }
 
   function formatDate(date: string) {
@@ -277,10 +284,10 @@ export default function ContentManagement({
         <div className="flex flex-col gap-3 border-b border-zinc-200 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-              Content Management
+              Pengelolaan Konten
             </h2>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Kelola gambar, video, dan teks untuk perangkat signage.
+              Kelola gambar, video, dan teks untuk ditampilkan pada perangkat signage.
             </p>
           </div>
 
@@ -295,7 +302,7 @@ export default function ContentManagement({
                 size={16}
                 className={loading ? "animate-spin" : ""}
               />
-              Refresh
+              Muat Ulang
             </button>
 
             <button
@@ -367,7 +374,7 @@ export default function ContentManagement({
                       <div className="flex flex-col items-center gap-2 text-zinc-400">
                         {getContentIcon(content.tipe)}
                         <span className="text-xs">
-                          Preview tidak tersedia
+                          Pratinjau tidak tersedia
                         </span>
                       </div>
                     )}
@@ -384,9 +391,9 @@ export default function ContentManagement({
                         </p>
                       </div>
 
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium capitalize text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                         {getContentIcon(content.tipe)}
-                        {content.tipe}
+                        {getContentTypeLabel(content.tipe)}
                       </span>
                     </div>
 
@@ -397,7 +404,7 @@ export default function ContentManagement({
                         className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                       >
                         <Pencil size={15} />
-                        Edit
+                        Ubah
                       </button>
 
                       <button
@@ -424,7 +431,7 @@ export default function ContentManagement({
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                  {editingContent ? "Edit Konten" : "Tambah Konten"}
+                  {editingContent ? "Ubah Konten" : "Tambah Konten"}
                 </h3>
                 <p className="mt-1 text-sm text-zinc-500">
                   {editingContent
@@ -469,7 +476,7 @@ export default function ContentManagement({
                     htmlFor="content-type"
                     className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
                   >
-                    Tipe Konten
+                    Jenis Konten
                   </label>
                   <select
                     id="content-type"
@@ -500,7 +507,7 @@ export default function ContentManagement({
                     onChange={(event) => setTextContent(event.target.value)}
                     rows={5}
                     required
-                    placeholder="Masukkan teks yang akan ditampilkan pada signage..."
+                    placeholder="Masukkan teks yang akan ditampilkan pada perangkat signage..."
                     className="w-full resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                   />
                 </div>
@@ -510,7 +517,7 @@ export default function ContentManagement({
                     htmlFor="content-file"
                     className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
                   >
-                    File {tipe === "image" ? "Gambar" : "Video"}
+                    Berkas {tipe === "image" ? "Gambar" : "Video"}
                   </label>
 
                   <label
@@ -521,7 +528,7 @@ export default function ContentManagement({
                     <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                       {selectedFile
                         ? selectedFile.name
-                        : "Klik untuk memilih file"}
+                        : "Klik untuk memilih berkas"}
                     </span>
                     <span className="mt-1 text-xs text-zinc-500">
                       {tipe === "image"
@@ -546,8 +553,7 @@ export default function ContentManagement({
                 </div>
               ) : (
                 <p className="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-500 dark:bg-zinc-800">
-                  File media tidak diganti. Hanya judul konten yang dapat
-                  diperbarui.
+                  Berkas media tidak diganti. Hanya judul konten yang dapat diperbarui.
                 </p>
               )}
 
