@@ -1,6 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useParams } from "next/navigation";
 import { getDeviceDisplay } from "@/lib/device-api";
 import { socket } from "@/lib/socket";
@@ -18,6 +24,46 @@ function DeviceClientContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Menyimpan data terbaru agar interval dapat mengakses posisi konten terkini.
+  const displayRef = useRef<DeviceDisplayResponse | null>(null);
+  const currentIndexRef = useRef(0);
+
+  useEffect(() => {
+    displayRef.current = display;
+  }, [display]);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
+  // Mengambil ulang playlist sekaligus memperbarui Signed URL.
+  // Posisi konten yang sedang ditampilkan tetap dipertahankan.
+  const refreshDisplay = useCallback(async () => {
+    try {
+      const previousDisplay = displayRef.current;
+      const previousContent =
+        previousDisplay?.contents[currentIndexRef.current];
+
+      const result = await getDeviceDisplay(deviceId);
+
+      setDisplay(result);
+      setError("");
+
+      if (previousContent) {
+        const newIndex = result.contents.findIndex(
+          (content) => content.id === previousContent.id
+        );
+
+        setCurrentIndex(newIndex >= 0 ? newIndex : 0);
+      } else {
+        setCurrentIndex(0);
+      }
+    } catch (err) {
+      console.error("Gagal memperbarui tampilan perangkat:", err);
+    }
+  }, [deviceId]);
+
+  // Mengambil data tampilan pertama kali.
   useEffect(() => {
     let isMounted = true;
 
@@ -58,89 +104,95 @@ function DeviceClientContent() {
   const currentContent: DisplayContent | undefined =
     contents[currentIndex];
 
-    useEffect(() => {
+  // Mengganti konten gambar atau teks setiap 10 detik.
+  // Video berpindah setelah selesai diputar.
+  useEffect(() => {
     if (contents.length <= 1 || currentContent?.tipe === "video") {
-        return;
+      return;
     }
 
     const interval = setInterval(() => {
-        setCurrentIndex((previousIndex) =>
-        (previousIndex + 1) % contents.length
-        );
+      setCurrentIndex(
+        (previousIndex) => (previousIndex + 1) % contents.length
+      );
     }, 10000);
 
     return () => clearInterval(interval);
-    }, [contents.length, currentContent?.tipe]);
+  }, [contents.length, currentContent?.tipe]);
 
-    useEffect(() => {
+  // Memperbarui Signed URL setiap 50 menit.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("Memperbarui Signed URL perangkat...");
+      refreshDisplay();
+    }, 50 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [refreshDisplay]);
+
+  // Koneksi realtime dan heartbeat perangkat.
+  useEffect(() => {
     let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
     const stopHeartbeat = () => {
-        if (heartbeatInterval) {
+      if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
         heartbeatInterval = null;
-        }
+      }
     };
 
-    // Mengirim heartbeat setiap 30 detik
+    // Mengirim heartbeat setiap 30 detik.
     const startHeartbeat = () => {
-        stopHeartbeat();
+      stopHeartbeat();
 
-        heartbeatInterval = setInterval(() => {
+      heartbeatInterval = setInterval(() => {
         socket.emit(
-            "device:heartbeat",
-            {},
-            (response: { success: boolean; message: string }) => {
+          "device:heartbeat",
+          {},
+          (response: { success: boolean; message: string }) => {
             if (!response.success) {
-                console.error("Heartbeat gagal:", response.message);
+              console.error("Heartbeat gagal:", response.message);
             }
-            }
+          }
         );
-        }, 30000);
+      }, 30000);
     };
 
-    // Mendaftarkan perangkat setiap kali socket terhubung
+    // Mendaftarkan perangkat setiap kali socket terhubung.
     const registerDevice = () => {
-        socket.emit(
+      socket.emit(
         "device:register",
         { deviceId },
         (response: { success: boolean; message: string }) => {
-            if (response.success) {
+          if (response.success) {
             console.log("Perangkat berhasil terhubung ke server realtime");
             startHeartbeat();
-            } else {
+          } else {
             console.error("Pendaftaran perangkat gagal:", response.message);
             stopHeartbeat();
-            }
+          }
         }
-        );
+      );
     };
 
-    // Mengambil ulang playlist ketika ada perubahan
+    // Mengambil ulang playlist ketika ada perubahan.
     const handlePlaylistUpdated = async (payload: {
-        deviceId: string;
+      deviceId: string;
     }) => {
-        if (payload.deviceId !== deviceId) {
+      if (payload.deviceId !== deviceId) {
         return;
-        }
+      }
 
-        console.log("Perubahan playlist diterima");
+      console.log("Perubahan playlist diterima");
 
-        try {
-        const result = await getDeviceDisplay(deviceId);
+      await refreshDisplay();
 
-        setDisplay(result);
-        setCurrentIndex(0);
-
-        console.log("Playlist berhasil diperbarui");
-        } catch (error) {
-        console.error("Gagal memperbarui playlist:", error);
-        }
+      console.log("Playlist berhasil diperbarui");
     };
 
     const handleDisconnect = () => {
-        stopHeartbeat();
-        console.log("Koneksi perangkat terputus");
+      stopHeartbeat();
+      console.log("Koneksi perangkat terputus");
     };
 
     socket.on("connect", registerDevice);
@@ -148,21 +200,21 @@ function DeviceClientContent() {
     socket.on("device:playlist:updated", handlePlaylistUpdated);
 
     if (!socket.connected) {
-        socket.connect();
+      socket.connect();
     } else {
-        registerDevice();
+      registerDevice();
     }
 
     return () => {
-        stopHeartbeat();
+      stopHeartbeat();
 
-        socket.off("connect", registerDevice);
-        socket.off("disconnect", handleDisconnect);
-        socket.off("device:playlist:updated", handlePlaylistUpdated);
+      socket.off("connect", registerDevice);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("device:playlist:updated", handlePlaylistUpdated);
 
-        socket.disconnect();
+      socket.disconnect();
     };
-    }, [deviceId]);
+  }, [deviceId, refreshDisplay]);
 
   if (loading) {
     return (
@@ -226,23 +278,24 @@ function DeviceClientContent() {
 
       case "video":
         return content.url ? (
-            <video
-            key={content.id}
+          <video
+            key={`${content.id}-${content.url}`}
             src={content.url}
             autoPlay
             muted
             loop={contents.length === 1}
             playsInline
             onEnded={() => {
-                setCurrentIndex(
-                (previousIndex) => (previousIndex + 1) % contents.length
-                );
+              setCurrentIndex(
+                (previousIndex) =>
+                  (previousIndex + 1) % contents.length
+              );
             }}
             className="h-full w-full object-contain"
-            />
+          />
         ) : (
-            <p className="text-white">Video tidak tersedia.</p>
-      );
+          <p className="text-white">Video tidak tersedia.</p>
+        );
 
       case "text":
         return (
