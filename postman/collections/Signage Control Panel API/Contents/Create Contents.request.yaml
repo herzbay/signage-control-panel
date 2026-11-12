@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{base_url}}/api/contents"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"judul\": \"Pengumuman Jam Operasional\",\r
+
+    \  \"tipe\": \"text\",\r
+
+    \  \"payload\": {\r
+
+    \    \"text\": \"Selamat datang! Layanan beroperasi pukul 08.00 - 17.00 WIB.\"\r
+
+    \  }\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0qtf}}"
+order: 2000

@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/contents/id_url/url"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0njo}}"
+order: 7000

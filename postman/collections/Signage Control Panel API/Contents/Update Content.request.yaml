@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{base_url}}/api/contents/id_url"
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"judul\": \"Pengumuman Jam Operasional Terbaru\",\r
+
+    \  \"payload\": {\r
+
+    \    \"text\": \"Selamat datang! Layanan beroperasi pukul 07.00 - 18.00 WIB.\"\r
+
+    \  }\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0qtf}}"
+order: 4000

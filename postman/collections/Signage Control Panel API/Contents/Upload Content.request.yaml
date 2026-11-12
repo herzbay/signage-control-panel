@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{base_url}}/api/contents/upload"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: judul
+      value: Banner Pengumuman
+      description: ""
+      disabled: false
+    - type: file
+      key: file
+      src:
+        - /C:/Users/Hp/Downloads/mv-bg.png
+      description: ""
+      disabled: false
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0njo}}"
+order: 6000
