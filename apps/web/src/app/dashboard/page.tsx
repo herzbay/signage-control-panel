@@ -22,6 +22,7 @@ import {
 } from "@/lib/api";
 
 import { socket } from "@/lib/socket";
+import DeviceManagement from "@/components/device-management";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -242,98 +243,18 @@ export default function DashboardPage() {
           />
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-6 py-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <LayoutDashboard size={19} className="text-zinc-500" />
-                <h3 className="font-semibold text-zinc-900">
-                  Device Management
-                </h3>
-              </div>
-              <p className="mt-1 text-sm text-zinc-500">
-                Monitor registered signage devices and their connection status.
-              </p>
-            </div>
+        <DeviceManagement
+          devices={devices}
+          setDevices={setDevices}
+          loading={loading}
+          onRefresh={() => {
+              const token = sessionStorage.getItem("admin_token");
 
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
-              {devices.length} devices
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="px-6 py-10 text-center text-sm text-zinc-500">
-              Loading devices...
-            </div>
-          ) : devices.length === 0 ? (
-            <div className="px-6 py-10 text-center">
-              <Monitor className="mx-auto text-zinc-300" size={32} />
-              <p className="mt-3 text-sm font-medium text-zinc-700">
-                No devices found
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Registered devices will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Device</th>
-                    <th className="px-6 py-4 font-medium">Location</th>
-                    <th className="px-6 py-4 font-medium">Status</th>
-                    <th className="px-6 py-4 font-medium">Last Seen</th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-zinc-100">
-                  {devices.map((device) => (
-                    <tr key={device.id} className="hover:bg-zinc-50">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-zinc-900">
-                          {device.nama}
-                        </p>
-                        <p className="mt-1 text-xs text-zinc-400">
-                          {device.id}
-                        </p>
-                      </td>
-
-                      <td className="px-6 py-4 text-zinc-600">
-                        {device.lokasi}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
-                            device.status === "online"
-                              ? "bg-green-50 text-green-700"
-                              : "bg-red-50 text-red-700"
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              device.status === "online"
-                                ? "bg-green-500"
-                                : "bg-red-500"
-                            }`}
-                          />
-                          {device.status}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-zinc-500">
-                        {device.last_seen
-                          ? new Date(device.last_seen).toLocaleString("id-ID")
-                          : "Never connected"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+              if (token) {
+              void loadDashboardData(token);
+              }
+          }}
+        />
 
         <section className="rounded-xl border border-zinc-200 bg-white p-6">
           <div className="flex items-center gap-2">
