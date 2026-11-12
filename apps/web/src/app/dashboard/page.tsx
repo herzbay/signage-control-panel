@@ -23,6 +23,7 @@ import {
 
 import { socket } from "@/lib/socket";
 import DeviceManagement from "@/components/device-management";
+import ContentManagement from "@/components/content-management";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -255,6 +256,19 @@ export default function DashboardPage() {
               }
           }}
         />
+
+        <ContentManagement
+          contents={contents}
+          setContents={setContents}
+          loading={loading}
+          onRefresh={() => {
+              const token = sessionStorage.getItem("admin_token");
+
+              if (token) {
+              void loadDashboardData(token);
+              }
+          }}
+        />        
 
         <section className="rounded-xl border border-zinc-200 bg-white p-6">
           <div className="flex items-center gap-2">
