@@ -73,7 +73,33 @@ function DeviceClientContent() {
     }, [contents.length, currentContent?.tipe]);
 
     useEffect(() => {
-    // Mendaftarkan perangkat ke Socket.IO
+    let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+
+    const stopHeartbeat = () => {
+        if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+        }
+    };
+
+    // Mengirim heartbeat setiap 30 detik
+    const startHeartbeat = () => {
+        stopHeartbeat();
+
+        heartbeatInterval = setInterval(() => {
+        socket.emit(
+            "device:heartbeat",
+            {},
+            (response: { success: boolean; message: string }) => {
+            if (!response.success) {
+                console.error("Heartbeat gagal:", response.message);
+            }
+            }
+        );
+        }, 30000);
+    };
+
+    // Mendaftarkan perangkat setiap kali socket terhubung
     const registerDevice = () => {
         socket.emit(
         "device:register",
@@ -81,11 +107,10 @@ function DeviceClientContent() {
         (response: { success: boolean; message: string }) => {
             if (response.success) {
             console.log("Perangkat berhasil terhubung ke server realtime");
+            startHeartbeat();
             } else {
-            console.error(
-                "Pendaftaran perangkat gagal:",
-                response.message
-            );
+            console.error("Pendaftaran perangkat gagal:", response.message);
+            stopHeartbeat();
             }
         }
         );
@@ -113,11 +138,15 @@ function DeviceClientContent() {
         }
     };
 
-    // Daftarkan event sebelum menghubungkan socket
+    const handleDisconnect = () => {
+        stopHeartbeat();
+        console.log("Koneksi perangkat terputus");
+    };
+
     socket.on("connect", registerDevice);
+    socket.on("disconnect", handleDisconnect);
     socket.on("device:playlist:updated", handlePlaylistUpdated);
 
-    // Hubungkan socket
     if (!socket.connected) {
         socket.connect();
     } else {
@@ -125,8 +154,12 @@ function DeviceClientContent() {
     }
 
     return () => {
+        stopHeartbeat();
+
         socket.off("connect", registerDevice);
+        socket.off("disconnect", handleDisconnect);
         socket.off("device:playlist:updated", handlePlaylistUpdated);
+
         socket.disconnect();
     };
     }, [deviceId]);
