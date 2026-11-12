@@ -22,6 +22,7 @@ import {
 import { socket } from "@/lib/socket";
 import DeviceManagement from "@/components/device-management";
 import ContentManagement from "@/components/content-management";
+import ToastProvider from "@/components/toast-provider";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -154,8 +155,9 @@ export default function DashboardPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#527279]">
+    return (
+    <ToastProvider>
+        <div className="min-h-screen bg-[#527279]">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-[#405D63] bg-[#527279] shadow-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
@@ -278,6 +280,7 @@ export default function DashboardPage() {
         />
       </main>
     </div>
+  </ToastProvider>
   );
 }
 

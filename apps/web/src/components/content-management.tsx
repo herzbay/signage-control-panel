@@ -3,8 +3,7 @@
 import {
   useEffect,
   useState,
-  type Dispatch,
-  type SetStateAction,
+  type ComponentProps,
 } from "react";
 import {
   Plus,
@@ -27,9 +26,11 @@ import {
   type Content,
 } from "@/lib/api";
 
+import { useToast } from "@/components/toast-provider";
+
 type ContentManagementProps = {
   contents: Content[];
-  setContents: Dispatch<SetStateAction<Content[]>>;
+  setContents: React.Dispatch<React.SetStateAction<Content[]>>;
   loading: boolean;
   onRefresh: () => void;
 };
@@ -42,6 +43,8 @@ export default function ContentManagement({
   loading,
   onRefresh,
 }: ContentManagementProps) {
+  const { showToast } = useToast();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingContent, setEditingContent] = useState<Content | null>(null);
 
@@ -140,32 +143,38 @@ export default function ContentManagement({
     resetForm();
   }
 
-  async function handleSubmit(
-    event: Parameters<
-        NonNullable<React.ComponentProps<"form">["onSubmit"]>
-    >[0]
-    ) {
+  const handleSubmit: NonNullable<
+    ComponentProps<"form">["onSubmit"]
+  > = async (event) => {
     event.preventDefault();
 
     const token = sessionStorage.getItem("admin_token");
 
     if (!token) {
-      setError("Sesi masuk tidak ditemukan. Silakan masuk kembali.");
+      const message = "Sesi masuk tidak ditemukan. Silakan masuk kembali.";
+      setError(message);
+      showToast(message, "error");
       return;
     }
 
     if (!judul.trim()) {
-      setError("Judul konten wajib diisi.");
+      const message = "Judul konten wajib diisi.";
+      setError(message);
+      showToast(message, "error");
       return;
     }
 
     if (!editingContent && tipe !== "text" && !selectedFile) {
-      setError("Silakan pilih berkas yang akan diunggah.");
+      const message = "Silakan pilih berkas yang akan diunggah.";
+      setError(message);
+      showToast(message, "error");
       return;
     }
 
     if (tipe === "text" && !textContent.trim()) {
-      setError("Isi konten teks wajib diisi.");
+      const message = "Isi konten teks wajib diisi.";
+      setError(message);
+      showToast(message, "error");
       return;
     }
 
@@ -194,6 +203,8 @@ export default function ContentManagement({
             item.id === updatedContent.id ? updatedContent : item
           )
         );
+
+        showToast("Konten berhasil diperbarui.");
       } else if (tipe === "text") {
         const newContent = await createTextContent(token, {
           judul: judul.trim(),
@@ -204,6 +215,8 @@ export default function ContentManagement({
         });
 
         setContents((current) => [newContent, ...current]);
+
+        showToast("Konten teks berhasil ditambahkan.");
       } else if (selectedFile) {
         const newContent = await uploadContent(
           token,
@@ -212,16 +225,28 @@ export default function ContentManagement({
         );
 
         setContents((current) => [newContent, ...current]);
+
+        showToast(
+          tipe === "image"
+            ? "Gambar berhasil diunggah."
+            : "Video berhasil diunggah."
+        );
       }
 
       setModalOpen(false);
       resetForm();
-    } catch {
-      setError("Gagal menyimpan konten. Silakan periksa kembali data dan koneksi Anda.");
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Gagal menyimpan konten. Silakan periksa kembali data dan koneksi Anda.";
+
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
-  }
+  };
 
   async function handleDelete(content: Content) {
     const confirmed = window.confirm(
@@ -233,7 +258,9 @@ export default function ContentManagement({
     const token = sessionStorage.getItem("admin_token");
 
     if (!token) {
-      setError("Sesi masuk tidak ditemukan. Silakan masuk kembali.");
+      const message = "Sesi masuk tidak ditemukan. Silakan masuk kembali.";
+      setError(message);
+      showToast(message, "error");
       return;
     }
 
@@ -252,8 +279,16 @@ export default function ContentManagement({
         delete updated[content.id];
         return updated;
       });
-    } catch {
-      setError("Gagal menghapus konten. Silakan coba kembali.");
+
+      showToast("Konten berhasil dihapus.");
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Gagal menghapus konten. Silakan coba kembali.";
+
+      setError(message);
+      showToast(message, "error");
     } finally {
       setDeletingId(null);
     }
@@ -414,7 +449,9 @@ export default function ContentManagement({
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:hover:bg-red-950/30"
                       >
                         <Trash2 size={15} />
-                        {deletingId === content.id ? "Menghapus..." : "Hapus"}
+                        {deletingId === content.id
+                          ? "Menghapus..."
+                          : "Hapus"}
                       </button>
                     </div>
                   </div>
@@ -425,6 +462,7 @@ export default function ContentManagement({
         </div>
       </section>
 
+      {/* Modal tambah dan ubah konten */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
           <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
@@ -458,6 +496,7 @@ export default function ContentManagement({
                 >
                   Judul Konten
                 </label>
+
                 <input
                   id="content-title"
                   type="text"
@@ -478,6 +517,7 @@ export default function ContentManagement({
                   >
                     Jenis Konten
                   </label>
+
                   <select
                     id="content-type"
                     value={tipe}
@@ -501,6 +541,7 @@ export default function ContentManagement({
                   >
                     Isi Konten
                   </label>
+
                   <textarea
                     id="content-text"
                     value={textContent}
@@ -525,11 +566,13 @@ export default function ContentManagement({
                     className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 px-4 py-8 text-center transition hover:border-blue-500 dark:border-zinc-700"
                   >
                     <Upload size={26} className="mb-2 text-zinc-400" />
+
                     <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                       {selectedFile
                         ? selectedFile.name
                         : "Klik untuk memilih berkas"}
                     </span>
+
                     <span className="mt-1 text-xs text-zinc-500">
                       {tipe === "image"
                         ? "JPEG, PNG, WEBP, atau GIF"
