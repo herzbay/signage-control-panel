@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getDeviceDisplay } from "@/lib/device-api";
+import { socket } from "@/lib/socket";
 import type {
   DeviceDisplayResponse,
   DisplayContent,
@@ -70,6 +71,65 @@ function DeviceClientContent() {
 
     return () => clearInterval(interval);
     }, [contents.length, currentContent?.tipe]);
+
+    useEffect(() => {
+    // Mendaftarkan perangkat ke Socket.IO
+    const registerDevice = () => {
+        socket.emit(
+        "device:register",
+        { deviceId },
+        (response: { success: boolean; message: string }) => {
+            if (response.success) {
+            console.log("Perangkat berhasil terhubung ke server realtime");
+            } else {
+            console.error(
+                "Pendaftaran perangkat gagal:",
+                response.message
+            );
+            }
+        }
+        );
+    };
+
+    // Mengambil ulang playlist ketika ada perubahan
+    const handlePlaylistUpdated = async (payload: {
+        deviceId: string;
+    }) => {
+        if (payload.deviceId !== deviceId) {
+        return;
+        }
+
+        console.log("Perubahan playlist diterima");
+
+        try {
+        const result = await getDeviceDisplay(deviceId);
+
+        setDisplay(result);
+        setCurrentIndex(0);
+
+        console.log("Playlist berhasil diperbarui");
+        } catch (error) {
+        console.error("Gagal memperbarui playlist:", error);
+        }
+    };
+
+    // Daftarkan event sebelum menghubungkan socket
+    socket.on("connect", registerDevice);
+    socket.on("device:playlist:updated", handlePlaylistUpdated);
+
+    // Hubungkan socket
+    if (!socket.connected) {
+        socket.connect();
+    } else {
+        registerDevice();
+    }
+
+    return () => {
+        socket.off("connect", registerDevice);
+        socket.off("device:playlist:updated", handlePlaylistUpdated);
+        socket.disconnect();
+    };
+    }, [deviceId]);
 
   if (loading) {
     return (
