@@ -260,6 +260,8 @@ const assignContent: express.RequestHandler = async (req, res) => {
     return;
   }
 
+  notifyDevicePlaylistChanged(req, deviceId);
+
   res.status(201).json({
     success: true,
     message: "Content assigned successfully",
@@ -315,6 +317,8 @@ const updateAssignment: express.RequestHandler = async (req, res) => {
     return;
   }
 
+  notifyDevicePlaylistChanged(req, deviceValidation.data);
+
   res.status(200).json({
     success: true,
     message: "Content assignment updated successfully",
@@ -360,6 +364,8 @@ const removeAssignment: express.RequestHandler = async (req, res) => {
     return;
   }
 
+  notifyDevicePlaylistChanged(req, deviceValidation.data);
+  
   res.status(200).json({
     success: true,
     message: "Content assignment removed successfully",
