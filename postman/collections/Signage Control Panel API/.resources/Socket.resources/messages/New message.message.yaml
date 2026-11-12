@@ -1,0 +1,7 @@
+$kind: socket.io-message
+eventName: device:heartbeat
+acknowledgement: true
+args:
+  - content: "{}"
+    contentType: json
+order: 1000

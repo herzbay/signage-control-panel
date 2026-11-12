@@ -1,0 +1,13 @@
+$kind: socket.io-request
+description: ""
+url: http://localhost:5000
+events:
+  - name: device:register
+    description: ""
+    subscribeOnConnect: false
+  - name: device:heartbeat
+    description: ""
+    subscribeOnConnect: false
+settings: {}
+messages: .resources/Socket.resources/messages
+order: 4000
