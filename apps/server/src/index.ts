@@ -4,6 +4,9 @@ dotenv.config();
 
 import express = require("express");
 import cors = require("cors");
+import http = require("http");
+import { Server } from "socket.io";
+
 import supabaseConfig = require("./config/supabase");
 import deviceRoutes = require("./routes/device.routes");
 import contentRoutes = require("./routes/content.routes");
@@ -53,7 +56,28 @@ app.get("/api/health/db", async (_req, res) => {
   });
 });
 
+// Create HTTP server
+const httpServer = http.createServer(app);
+
+// Initialize Socket.IO
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.WEB_ORIGIN || "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+// Socket.IO connection handler
+io.on("connection", (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
+  socket.on("disconnect", (reason) => {
+    console.log(`Socket disconnected: ${socket.id} - ${reason}`);
+  });
+});
+
 // Start server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log("Socket.IO server is ready");
 });
