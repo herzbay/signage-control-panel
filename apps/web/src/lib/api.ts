@@ -51,6 +51,17 @@ export type ContentUrl = {
   expires_in: number;
 };
 
+// Relasi perangkat dan konten
+export type DeviceContent = {
+  device_id: string;
+  content_id: string;
+  position: number;
+  is_active: boolean;
+  assigned_at: string;
+  updated_at: string;
+  contents: Content | null;
+};
+
 type ApiResponse<T> = {
   success: boolean;
   message: string;
@@ -233,4 +244,73 @@ export async function getContentUrl(
   );
 
   return result.data;
+}
+
+// Device Content Management
+export async function getDeviceContents(
+  token: string,
+  deviceId: string
+): Promise<DeviceContent[]> {
+  const result = await apiRequest<DeviceContent[]>(
+    `/api/devices/${deviceId}/contents`,
+    token
+  );
+
+  return result.data;
+}
+
+export async function assignContentToDevice(
+  token: string,
+  deviceId: string,
+  data: {
+    content_id: string;
+    position?: number;
+    is_active?: boolean;
+  }
+): Promise<DeviceContent> {
+  const result = await apiRequest<DeviceContent>(
+    `/api/devices/${deviceId}/contents`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  return result.data;
+}
+
+export async function updateDeviceContent(
+  token: string,
+  deviceId: string,
+  contentId: string,
+  data: {
+    position?: number;
+    is_active?: boolean;
+  }
+): Promise<DeviceContent> {
+  const result = await apiRequest<DeviceContent>(
+    `/api/devices/${deviceId}/contents/${contentId}`,
+    token,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+
+  return result.data;
+}
+
+export async function removeContentFromDevice(
+  token: string,
+  deviceId: string,
+  contentId: string
+): Promise<void> {
+  await apiRequest<unknown>(
+    `/api/devices/${deviceId}/contents/${contentId}`,
+    token,
+    {
+      method: "DELETE",
+    }
+  );
 }
