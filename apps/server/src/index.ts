@@ -68,6 +68,8 @@ const io = new Server(httpServer, {
   },
 });
 
+app.set("io", io);
+
 deviceSocket.registerDeviceSocket(io);
 
 // Start server
