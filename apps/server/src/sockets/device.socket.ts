@@ -151,54 +151,59 @@ const registerDeviceSocket = (io: Server) => {
 
     // Device heartbeat
     socket.on(
-      "device:heartbeat",
-      async (
+    "device:heartbeat",
+    (
+        _payload: Record<string, never>,
         acknowledge?: (response: {
-          success: boolean;
-          message: string;
+        success: boolean;
+        message: string;
         }) => void
-      ) => {
+    ) => {
         const deviceId = socket.data.deviceId as string | undefined;
 
         if (!deviceId) {
-          acknowledge?.({
+        acknowledge?.({
             success: false,
             message: "Device is not registered",
-          });
-          return;
+        });
+        return;
         }
 
+        const processHeartbeat = async () => {
         try {
-          const { error } = await supabase
+            const { error } = await supabase
             .from("devices")
             .update({
-              status: "online",
-              last_seen: new Date().toISOString(),
+                status: "online",
+                last_seen: new Date().toISOString(),
             })
             .eq("id", deviceId);
 
-          if (error) {
+            if (error) {
             console.error("Heartbeat error:", error.message);
 
             acknowledge?.({
-              success: false,
-              message: "Failed to update heartbeat",
+                success: false,
+                message: "Failed to update heartbeat",
             });
             return;
-          }
+            }
 
-          acknowledge?.({
+            acknowledge?.({
             success: true,
             message: "Heartbeat received",
-          });
+            });
         } catch (error) {
-          console.error("Heartbeat error:", error);
+            console.error("Heartbeat error:", error);
 
-          acknowledge?.({
+            acknowledge?.({
             success: false,
             message: "Failed to process heartbeat",
-          });
-        }
+            });
+          }
+        };
+
+        void processHeartbeat();
       }
     );
 
