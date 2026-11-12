@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/devices/174c3ccf-b17a-4886-97f2-e40f96e3d6af/contents"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_11ru}}"
+order: 6000

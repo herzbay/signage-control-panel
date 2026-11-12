@@ -18,3 +18,12 @@ variables:
   - key: json_web_token_0njo
     secret: true
     disabled: false
+  - key: json_web_token_11ru
+    secret: true
+    disabled: false
+  - key: json_web_token_1d6f
+    secret: true
+    disabled: false
+  - key: json_web_token_1cs8
+    secret: true
+    disabled: false

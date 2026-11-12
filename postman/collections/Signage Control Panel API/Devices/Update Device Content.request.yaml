@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/api/devices/174c3ccf-b17a-4886-97f2-e40f96e3d6af/contents/7e48681b-0a42-40d3-a9ad-d735c4765c54"
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"position\": 2,\r
+
+    \  \"is_active\": false\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_1d6f}}"
+order: 7000

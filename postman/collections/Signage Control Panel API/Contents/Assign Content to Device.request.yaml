@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/api/devices/174c3ccf-b17a-4886-97f2-e40f96e3d6af/contents"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"content_id\": \"7e48681b-0a42-40d3-a9ad-d735c4765c54\",\r
+
+    \  \"is_active\": true\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_11ru}}"
+order: 8000
