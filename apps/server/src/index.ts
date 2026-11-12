@@ -11,6 +11,7 @@ import supabaseConfig = require("./config/supabase");
 import deviceRoutes = require("./routes/device.routes");
 import contentRoutes = require("./routes/content.routes");
 import authRoutes = require("./routes/auth.routes");
+import deviceSocket = require("./sockets/device.socket");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -67,14 +68,7 @@ const io = new Server(httpServer, {
   },
 });
 
-// Socket.IO connection handler
-io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
-
-  socket.on("disconnect", (reason) => {
-    console.log(`Socket disconnected: ${socket.id} - ${reason}`);
-  });
-});
+deviceSocket.registerDeviceSocket(io);
 
 // Start server
 httpServer.listen(PORT, () => {
