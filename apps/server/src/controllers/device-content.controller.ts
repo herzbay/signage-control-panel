@@ -5,6 +5,22 @@ import supabaseConfig = require("../config/supabase");
 const { z } = zod;
 const supabase = supabaseConfig.supabaseAdmin;
 
+const notifyDevicePlaylistChanged = (
+  req: express.Request,
+  deviceId: string
+) => {
+  const io = req.app.get("io");
+
+  if (!io) {
+    console.warn("Socket.IO instance is not available");
+    return;
+  }
+
+  io.to(`device:${deviceId}`).emit("device:playlist:updated", {
+    deviceId,
+  });
+};
+
 const deviceIdSchema = z.string().uuid();
 
 const contentIdSchema = z.string().uuid();
