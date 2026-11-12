@@ -350,9 +350,121 @@ const removeAssignment: express.RequestHandler = async (req, res) => {
   });
 };
 
+// GET /api/devices/:id/display
+const getDeviceDisplay: express.RequestHandler = async (req, res) => {
+  const validation = deviceIdSchema.safeParse(req.params.id);
+
+  if (!validation.success) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid device ID",
+    });
+    return;
+  }
+
+  const deviceId = validation.data;
+
+  // Ambil informasi perangkat
+  const { data: device, error: deviceError } = await supabase
+    .from("devices")
+    .select("id, nama, lokasi, status")
+    .eq("id", deviceId)
+    .maybeSingle();
+
+  if (deviceError) {
+    console.error("Get display device error:", deviceError.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve device",
+    });
+    return;
+  }
+
+  if (!device) {
+    res.status(404).json({
+      success: false,
+      message: "Device not found",
+    });
+    return;
+  }
+
+  // Ambil konten aktif berdasarkan urutan penayangan
+  const { data: assignments, error: assignmentError } = await supabase
+    .from("device_contents")
+    .select(`
+      position,
+      contents (
+        id,
+        judul,
+        tipe,
+        url,
+        storage_path,
+        payload
+      )
+    `)
+    .eq("device_id", deviceId)
+    .eq("is_active", true)
+    .order("position", { ascending: true });
+
+  if (assignmentError) {
+    console.error("Get display contents error:", assignmentError.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve display contents",
+    });
+    return;
+  }
+
+  // Siapkan URL konten agar dapat ditampilkan oleh perangkat
+  const displayContents = await Promise.all(
+    (assignments ?? []).map(async (assignment) => {
+    const content = Array.isArray(assignment.contents)
+        ? assignment.contents[0]
+        : assignment.contents;
+
+    if (!content) {
+        return null;
+    }
+
+      let contentUrl = content.url;
+
+      if (content.storage_path) {
+        const { data, error } = await supabase.storage
+          .from("signage-content")
+          .createSignedUrl(content.storage_path, 3600);
+
+        if (error || !data) {
+          console.error("Create display URL error:", error?.message);
+          return null;
+        }
+
+        contentUrl = data.signedUrl;
+      }
+
+      return {
+        id: content.id,
+        judul: content.judul,
+        tipe: content.tipe,
+        url: contentUrl,
+        payload: content.payload,
+        position: assignment.position,
+      };
+    })
+  );
+
+  res.status(200).json({
+    success: true,
+    data: {
+      device,
+      contents: displayContents.filter(Boolean),
+    },
+  });
+};
+
 export = {
   getDeviceContents,
   assignContent,
   updateAssignment,
   removeAssignment,
+  getDeviceDisplay,
 };

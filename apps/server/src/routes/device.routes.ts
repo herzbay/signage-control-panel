@@ -5,6 +5,10 @@ import authMiddleware = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
+// Device Client - endpoint publik khusus tampilan perangkat
+router.get("/:id/display", deviceContentController.getDeviceDisplay);
+
+// Semua endpoint berikutnya memerlukan autentikasi admin
 router.use(authMiddleware.authenticateAdmin);
 
 // Device CRUD
