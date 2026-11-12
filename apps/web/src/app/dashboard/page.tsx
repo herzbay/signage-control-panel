@@ -247,6 +247,7 @@ export default function DashboardPage() {
         <DeviceManagement
           devices={devices}
           setDevices={setDevices}
+          contents={contents}
           loading={loading}
           onRefresh={() => {
               const token = sessionStorage.getItem("admin_token");

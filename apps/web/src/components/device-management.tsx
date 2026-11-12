@@ -8,6 +8,7 @@ import {
   Monitor,
   X,
   RefreshCw,
+  Images,
 } from "lucide-react";
 
 import {
@@ -15,11 +16,15 @@ import {
   updateDevice,
   deleteDevice,
   type Device,
+  type Content,
 } from "@/lib/api";
+
+import DeviceContentManagement from "@/components/device-content-management";
 
 type DeviceManagementProps = {
   devices: Device[];
   setDevices: React.Dispatch<React.SetStateAction<Device[]>>;
+  contents: Content[];
   loading: boolean;
   onRefresh: () => void;
 };
@@ -27,11 +32,14 @@ type DeviceManagementProps = {
 export default function DeviceManagement({
   devices,
   setDevices,
+  contents,
   loading,
   onRefresh,
 }: DeviceManagementProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+  const [managingDevice, setManagingDevice] = useState<Device | null>(null);
+
   const [nama, setNama] = useState("");
   const [lokasi, setLokasi] = useState("");
   const [saving, setSaving] = useState(false);
@@ -70,7 +78,7 @@ export default function DeviceManagement({
     const token = sessionStorage.getItem("admin_token");
 
     if (!token) {
-      setError("Session expired. Please log in again.");
+      setError("Sesi telah berakhir. Silakan masuk kembali.");
       return;
     }
 
@@ -92,9 +100,7 @@ export default function DeviceManagement({
 
         setDevices((previous) =>
           previous.map((device) =>
-            device.id === updatedDevice.id
-              ? updatedDevice
-              : device
+            device.id === updatedDevice.id ? updatedDevice : device
           )
         );
       } else {
@@ -111,7 +117,7 @@ export default function DeviceManagement({
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to save device"
+          : "Gagal menyimpan data perangkat."
       );
     } finally {
       setSaving(false);
@@ -120,7 +126,7 @@ export default function DeviceManagement({
 
   const handleDelete = async (device: Device) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${device.nama}"?`
+      `Apakah Anda yakin ingin menghapus perangkat "${device.nama}"?`
     );
 
     if (!confirmed) return;
@@ -128,7 +134,7 @@ export default function DeviceManagement({
     const token = sessionStorage.getItem("admin_token");
 
     if (!token) {
-      setError("Session expired. Please log in again.");
+      setError("Sesi telah berakhir. Silakan masuk kembali.");
       return;
     }
 
@@ -145,7 +151,7 @@ export default function DeviceManagement({
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to delete device"
+          : "Gagal menghapus perangkat."
       );
     } finally {
       setDeletingId(null);
@@ -157,10 +163,10 @@ export default function DeviceManagement({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-6 py-5">
         <div>
           <h3 className="font-semibold text-zinc-900">
-            Device Management
+            Pengelolaan Perangkat
           </h3>
           <p className="mt-1 text-sm text-zinc-500">
-            Manage and monitor your signage devices.
+            Kelola dan pantau perangkat penampil digital.
           </p>
         </div>
 
@@ -168,7 +174,7 @@ export default function DeviceManagement({
           <button
             onClick={onRefresh}
             disabled={loading}
-            title="Refresh devices"
+            title="Muat ulang daftar perangkat"
             className="rounded-lg border border-zinc-200 p-2.5 text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50"
           >
             <RefreshCw
@@ -182,7 +188,7 @@ export default function DeviceManagement({
             className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700"
           >
             <Plus size={17} />
-            Add Device
+            Tambah Perangkat
           </button>
         </div>
       </div>
@@ -195,16 +201,16 @@ export default function DeviceManagement({
 
       {loading ? (
         <div className="px-6 py-10 text-center text-sm text-zinc-500">
-          Loading devices...
+          Memuat daftar perangkat...
         </div>
       ) : devices.length === 0 ? (
         <div className="px-6 py-12 text-center">
           <Monitor className="mx-auto text-zinc-300" size={34} />
           <p className="mt-3 text-sm font-medium text-zinc-700">
-            No devices found
+            Belum ada perangkat
           </p>
           <p className="mt-1 text-xs text-zinc-500">
-            Add your first signage device to get started.
+            Tambahkan perangkat pertama untuk memulai.
           </p>
         </div>
       ) : (
@@ -212,11 +218,11 @@ export default function DeviceManagement({
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
               <tr>
-                <th className="px-6 py-4 font-medium">Device</th>
-                <th className="px-6 py-4 font-medium">Location</th>
+                <th className="px-6 py-4 font-medium">Perangkat</th>
+                <th className="px-6 py-4 font-medium">Lokasi</th>
                 <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Last Seen</th>
-                <th className="px-6 py-4 text-right font-medium">Actions</th>
+                <th className="px-6 py-4 font-medium">Terakhir Terhubung</th>
+                <th className="px-6 py-4 text-right font-medium">Aksi</th>
               </tr>
             </thead>
 
@@ -251,34 +257,45 @@ export default function DeviceManagement({
                             : "bg-red-500"
                         }`}
                       />
-                      {device.status}
+                      {device.status === "online" ? "Online" : "Offline"}
                     </span>
                   </td>
 
                   <td className="px-6 py-4 text-zinc-500">
                     {device.last_seen
                       ? new Date(device.last_seen).toLocaleString("id-ID")
-                      : "Never connected"}
+                      : "Belum pernah terhubung"}
                   </td>
 
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
                       <button
+                        onClick={() => setManagingDevice(device)}
+                        title="Kelola konten perangkat"
+                        className="rounded-lg border border-blue-100 p-2 text-blue-600 transition hover:bg-blue-50"
+                      >
+                        <Images size={16} />
+                      </button>
+
+                      <button
                         onClick={() => openEditModal(device)}
-                        title="Edit device"
+                        title="Ubah perangkat"
                         className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100"
                       >
                         <Pencil size={16} />
                       </button>
 
                       <button
-                        onClick={() => handleDelete(device)}
+                        onClick={() => void handleDelete(device)}
                         disabled={deletingId === device.id}
-                        title="Delete device"
+                        title="Hapus perangkat"
                         className="rounded-lg border border-red-100 p-2 text-red-500 transition hover:bg-red-50 disabled:opacity-50"
                       >
                         {deletingId === device.id ? (
-                          <RefreshCw size={16} className="animate-spin" />
+                          <RefreshCw
+                            size={16}
+                            className="animate-spin"
+                          />
                         ) : (
                           <Trash2 size={16} />
                         )}
@@ -292,18 +309,19 @@ export default function DeviceManagement({
         </div>
       )}
 
+      {/* Modal tambah dan ubah perangkat */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-zinc-900">
-                  {editingDevice ? "Edit Device" : "Add New Device"}
+                  {editingDevice ? "Ubah Perangkat" : "Tambah Perangkat Baru"}
                 </h3>
                 <p className="mt-1 text-sm text-zinc-500">
                   {editingDevice
-                    ? "Update device information."
-                    : "Register a new signage device."}
+                    ? "Perbarui informasi perangkat."
+                    : "Daftarkan perangkat penampil digital baru."}
                 </p>
               </div>
 
@@ -322,7 +340,7 @@ export default function DeviceManagement({
                   htmlFor="device-name"
                   className="mb-2 block text-sm font-medium text-zinc-700"
                 >
-                  Device Name
+                  Nama Perangkat
                 </label>
 
                 <input
@@ -330,7 +348,7 @@ export default function DeviceManagement({
                   type="text"
                   value={nama}
                   onChange={(event) => setNama(event.target.value)}
-                  placeholder="e.g. Smart TV Lobby"
+                  placeholder="Contoh: Smart TV Lobby"
                   required
                   maxLength={100}
                   className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
@@ -342,7 +360,7 @@ export default function DeviceManagement({
                   htmlFor="device-location"
                   className="mb-2 block text-sm font-medium text-zinc-700"
                 >
-                  Location
+                  Lokasi Perangkat
                 </label>
 
                 <input
@@ -350,7 +368,7 @@ export default function DeviceManagement({
                   type="text"
                   value={lokasi}
                   onChange={(event) => setLokasi(event.target.value)}
-                  placeholder="e.g. Floor 1 - Lobby"
+                  placeholder="Contoh: Lantai 1 - Lobi"
                   required
                   maxLength={150}
                   className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
@@ -370,7 +388,7 @@ export default function DeviceManagement({
                   disabled={saving}
                   className="rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50"
                 >
-                  Cancel
+                  Batal
                 </button>
 
                 <button
@@ -379,15 +397,24 @@ export default function DeviceManagement({
                   className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving
-                    ? "Saving..."
+                    ? "Menyimpan..."
                     : editingDevice
-                      ? "Save Changes"
-                      : "Create Device"}
+                      ? "Simpan Perubahan"
+                      : "Tambah Perangkat"}
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal pengelolaan konten perangkat */}
+      {managingDevice && (
+        <DeviceContentManagement
+          device={managingDevice}
+          contents={contents}
+          onClose={() => setManagingDevice(null)}
+        />
       )}
     </section>
   );
