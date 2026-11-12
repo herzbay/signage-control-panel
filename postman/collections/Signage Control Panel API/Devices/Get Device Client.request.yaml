@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{base_url}}/api/devices/174c3ccf-b17a-4886-97f2-e40f96e3d6af/display"
+method: GET
+order: 9000
