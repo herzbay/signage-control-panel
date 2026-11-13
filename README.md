@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="Socket.IO" />
+  <img src="https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="WebSocket (Socket.IO)" />
 </p>
 
 ---
@@ -51,8 +51,6 @@ Memungkinkan administrator mengelola konten berupa gambar, video, dan teks, term
 Halaman tampilan perangkat signage yang menayangkan konten berdasarkan playlist yang telah ditetapkan dan memperbarui konten secara otomatis ketika menerima pemberitahuan dari server.
 
 ![Simulasi Device Client](docs/screenshots/device-client.png)
-
-> 📌 **Catatan:** Letakkan screenshot asli aplikasi pada folder `docs/screenshots/` dengan nama file sesuai yang tercantum di atas.
 
 ---
 
@@ -294,7 +292,6 @@ Isi variabel lingkungan backend sesuai konfigurasi proyek:
 PORT=5000
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-JWT_SECRET=your_jwt_secret
 ```
 
 > Sesuaikan nama variabel dengan konfigurasi aktual pada backend.
@@ -305,8 +302,6 @@ Buat file `.env.local` di dalam folder `apps/web/`:
 NEXT_PUBLIC_API_URL=http://localhost:5000
 NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
 ```
-
-> ⚠️ Jangan pernah mengunggah file `.env` atau `.env.local` yang berisi kredensial dan secret ke repository publik.
 
 ### 4. Instalasi Dependencies Backend
 
