@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
   <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="WebSocket (Socket.IO)" />
+  <img src="https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="Socket.IO" />
 </p>
 
 ---
@@ -445,8 +445,6 @@ Beberapa pengembangan yang dapat dilakukan untuk meningkatkan fungsionalitas apl
 
 - Implementasi device client berbasis Electron.
 - Pengembangan manajemen command perangkat yang lebih lengkap.
-- Autentikasi khusus untuk setiap perangkat.
-- Penjadwalan playlist dan pengaturan waktu penayangan konten.
 
 ---
 
