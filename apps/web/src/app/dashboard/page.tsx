@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -155,132 +156,140 @@ export default function DashboardPage() {
     }
   };
 
-    return (
+  return (
     <ToastProvider>
-        <div className="min-h-screen bg-[#527279]">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-[#405D63] bg-[#527279] shadow-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#527279] text-lg font-bold text-white ring-2 ring-white/70">
-              S
+      <div className="min-h-screen bg-[#527279]">
+        {/* Top Navbar */}
+        <header className="sticky top-0 z-40 border-b border-[#405D63] bg-[#527279] shadow-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+            <div className="flex items-center gap-3">
+              {/* Logo Signage Control Panel */}
+              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-white ring-2 ring-white/70 shadow-md">
+                <Image
+                  src="/logoscp.png"
+                  alt="Logo Signage Control Panel"
+                  width={44}
+                  height={44}
+                  priority
+                  className="h-full w-full object-cover"
+                />
+              </div>
+
+              <div>
+                <h1 className="font-bold text-white">
+                  Signage Control Panel
+                </h1>
+                <p className="text-xs text-white/75">
+                  Panel Pengelolaan Signage
+                </p>
+              </div>
             </div>
 
-            <div>
-              <h1 className="font-bold text-white">
-                Signage Control Panel
-              </h1>
-              <p className="text-xs text-white/75">
-                Panel Pengelolaan Signage
-              </p>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-semibold text-white">
+                  {admin?.full_name}
+                </p>
+                <p className="text-xs text-white/75">
+                  {admin?.email}
+                </p>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20"
+              >
+                <LogOut size={16} />
+                Keluar
+              </button>
             </div>
           </div>
+        </header>
 
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold text-white">
-                {admin?.full_name}
-              </p>
-              <p className="text-xs text-white/75">
-                {admin?.email}
+        {/* Konten Dashboard */}
+        <main className="mx-auto max-w-7xl space-y-7 px-4 py-7 sm:px-6 sm:py-8">
+          {/* Ringkasan */}
+          <section className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">
+                Selamat datang, {admin?.full_name}!
+              </h2>
+
+              <p className="mt-2 text-sm text-white/75">
+                Pantau perangkat signage dan kelola konten yang ditampilkan.
               </p>
             </div>
 
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 rounded-lg bg-[#17CBB7] px-4 py-2.5 text-sm font-semibold text-[#24383C] shadow-sm transition hover:bg-[#0DA995] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <LogOut size={16} />
-              Keluar
+              <RefreshCw
+                size={16}
+                className={loading ? "animate-spin" : ""}
+              />
+              Muat Ulang
             </button>
-          </div>
-        </div>
-      </header>
+          </section>
 
-      {/* Konten Dashboard */}
-      <main className="mx-auto max-w-7xl space-y-7 px-4 py-7 sm:px-6 sm:py-8">
-        {/* Ringkasan */}
-        <section className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">
-            Selamat datang, {admin?.full_name}!
-            </h2>
+          {/* Pesan Kesalahan */}
+          {error && (
+            <div className="rounded-xl border border-red-500/40 bg-red-950 px-4 py-3 text-sm text-red-200">
+              {error}
+            </div>
+          )}
 
-            <p className="mt-2 text-sm text-white/75">
-            Pantau perangkat signage dan kelola konten yang ditampilkan.
-            </p>
-          </div>
-
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-lg bg-[#17CBB7] px-4 py-2.5 text-sm font-semibold text-[#24383C] shadow-sm transition hover:bg-[#0DA995] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw
-              size={16}
-              className={loading ? "animate-spin" : ""}
+          {/* Statistik */}
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Perangkat"
+              value={loading ? "..." : devices.length}
+              description="Perangkat terdaftar"
+              icon={<Monitor size={21} />}
             />
-            Muat Ulang
-          </button>
-        </section>
 
-        {/* Pesan Kesalahan */}
-        {error && (
-          <div className="rounded-xl border border-red-500/40 bg-red-950 px-4 py-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
+            <StatCard
+              title="Perangkat Daring"
+              value={loading ? "..." : onlineCount}
+              description="Sedang terhubung"
+              icon={<Wifi size={21} />}
+            />
 
-        {/* Statistik */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Perangkat"
-            value={loading ? "..." : devices.length}
-            description="Perangkat terdaftar"
-            icon={<Monitor size={21} />}
+            <StatCard
+              title="Perangkat Luring"
+              value={loading ? "..." : offlineCount}
+              description="Tidak terhubung"
+              icon={<WifiOff size={21} />}
+            />
+
+            <StatCard
+              title="Total Konten"
+              value={loading ? "..." : contents.length}
+              description="Konten tersimpan"
+              icon={<Images size={21} />}
+            />
+          </section>
+
+          {/* Pengelolaan Perangkat */}
+          <DeviceManagement
+            devices={devices}
+            setDevices={setDevices}
+            contents={contents}
+            loading={loading}
+            onRefresh={handleRefresh}
           />
 
-          <StatCard
-            title="Perangkat Daring"
-            value={loading ? "..." : onlineCount}
-            description="Sedang terhubung"
-            icon={<Wifi size={21} />}
+          {/* Pengelolaan Konten */}
+          <ContentManagement
+            contents={contents}
+            setContents={setContents}
+            loading={loading}
+            onRefresh={handleRefresh}
           />
-
-          <StatCard
-            title="Perangkat Luring"
-            value={loading ? "..." : offlineCount}
-            description="Tidak terhubung"
-            icon={<WifiOff size={21} />}
-          />
-
-          <StatCard
-            title="Total Konten"
-            value={loading ? "..." : contents.length}
-            description="Konten tersimpan"
-            icon={<Images size={21} />}
-          />
-        </section>
-
-        {/* Pengelolaan Perangkat */}
-        <DeviceManagement
-          devices={devices}
-          setDevices={setDevices}
-          contents={contents}
-          loading={loading}
-          onRefresh={handleRefresh}
-        />
-
-        {/* Pengelolaan Konten */}
-        <ContentManagement
-          contents={contents}
-          setContents={setContents}
-          loading={loading}
-          onRefresh={handleRefresh}
-        />
-      </main>
-    </div>
-  </ToastProvider>
+        </main>
+      </div>
+    </ToastProvider>
   );
 }
 
